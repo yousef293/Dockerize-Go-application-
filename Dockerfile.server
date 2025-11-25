@@ -1,0 +1,39 @@
+# ---------------------------
+# Stage 1: Build the Go server
+# ---------------------------
+FROM golang:1.25.1-alpine AS builder
+
+# Set the working directory inside the builder container
+WORKDIR /src
+
+# Copy dependency files first so Docker can cache this step
+COPY go.mod ./
+
+# Download Go modules (faster rebuilds because of caching)
+RUN go mod download
+
+# Copy the entire project source code
+COPY . .
+
+# Move into the server folder
+WORKDIR /src/server
+
+# Build a static binary (no external libraries needed)
+ENV CGO_ENABLED=0
+RUN go build -o /app/chatserver server.go
+
+# ---------------------------
+# Stage 2: Runtime container
+# ---------------------------
+FROM alpine:3.18
+
+WORKDIR /app
+
+# Copy the compiled binary from the builder stage
+COPY --from=builder /app/chatserver .
+
+# Expose the RPC port
+EXPOSE 1234
+
+# Run the server
+CMD ["./chatserver"]
