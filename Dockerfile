@@ -36,4 +36,5 @@ COPY --from=builder /app/chatserver .
 EXPOSE 1234
 
 # Run the server
+
 CMD ["./chatserver"]
